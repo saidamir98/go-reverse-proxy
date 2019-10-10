@@ -1,0 +1,10 @@
+{
+  "name": "go-reverse-proxy",
+  "description": "Go reverse-proxy app",
+  "keywords": [
+    "go",
+    "golang",
+    "reverse-proxy",
+    "example"
+  ]
+}
