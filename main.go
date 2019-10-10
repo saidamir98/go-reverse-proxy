@@ -21,10 +21,13 @@ func middlewareOne(next http.Handler) http.Handler {
 
 func middlewareTwo(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(proxyURL)
 		log.Println("--------------------------------------------")
 		next.ServeHTTP(w, r)
 	})
 }
+
+var proxyURL string = os.Getenv("PROXY_URL")
 
 func main() {
 	port := os.Getenv("PORT")
@@ -34,7 +37,6 @@ func main() {
 		port = "8080"
 	}
 
-	proxyURL := os.Getenv("PROXY_URL")
 	if proxyURL == "" {
 		log.Println("$PROXY_URL must be set")
 		proxyURL = "http://localhost:8081/"
