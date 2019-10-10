@@ -42,6 +42,5 @@ func main() {
 
 	u, _ := url.Parse(proxyURL)
 	http.Handle("/", middlewareOne(middlewareTwo(httputil.NewSingleHostReverseProxy(u))))
-
-	http.ListenAndServe(":"+port, nil)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
