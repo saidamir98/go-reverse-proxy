@@ -30,10 +30,17 @@ func main() {
 	port := os.Getenv("PORT")
 
 	if port == "" {
-		log.Fatal("$PORT must be set")
+		log.Println("$PORT must be set")
+		port = "8080"
 	}
 
-	u, _ := url.Parse(os.Getenv("PROXY_URL"))
+	proxyURL := os.Getenv("PROXY_URL")
+	if proxyURL == "" {
+		log.Println("$PROXY_URL must be set")
+		proxyURL = "http://localhost:8081/"
+	}
+
+	u, _ := url.Parse(proxyURL)
 	http.Handle("/", middlewareOne(middlewareTwo(httputil.NewSingleHostReverseProxy(u))))
 
 	http.ListenAndServe(":"+port, nil)
