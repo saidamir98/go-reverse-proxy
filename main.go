@@ -6,13 +6,31 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 )
 
-var PROXY_URL = "https://www.google.com:443"
+var PROXY_URL = "https://daryo.uz"
+
+// Get env var or default
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+// Get the port to listen on
+func getListenAddress() string {
+	port := getEnv("PORT", "8080")
+	return ":" + port
+}
 
 func main() {
 	http.HandleFunc("/", handleRequestAndRedirect)
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+
+	addr := getListenAddress()
+	log.Println(addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalln(err)
 	}
 }
