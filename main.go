@@ -6,44 +6,39 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
-
-	_ "github.com/heroku/x/hmetrics/onload"
 )
 
-func middlewareOne(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		output := fmt.Sprintf("Req: %s %s %s \nData: %v \nFinished", r.Method, r.URL.Host, r.URL.Path, r)
-		log.Println(output)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func middlewareTwo(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println(proxyURL)
-		log.Println("--------------------------------------------")
-		next.ServeHTTP(w, r)
-	})
-}
-
-var proxyURL string = os.Getenv("PROXY_URL")
+var PROXY_URL = "https://www.google.com:443"
 
 func main() {
-	port := os.Getenv("PORT")
-
-	if port == "" {
-		log.Println("$PORT must be set")
-		port = "8080"
+	http.HandleFunc("/", handleRequestAndRedirect)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalln(err)
 	}
+}
 
-	if proxyURL == "" {
-		log.Println("$PROXY_URL must be set")
-		proxyURL = "http://localhost:8081/"
-	}
+// Given a request send it to the appropriate url
+func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
+	output := fmt.Sprintf("Req: %s %s %s \nData: %v \nFinished", req.Method, req.URL.Host, req.URL.Path, req)
+	log.Println(output)
 
-	u, _ := url.Parse(proxyURL)
-	http.Handle("/", middlewareOne(middlewareTwo(httputil.NewSingleHostReverseProxy(u))))
+	serveReverseProxy(PROXY_URL, res, req)
+}
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+// Serve a reverse proxy for a given url
+func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request) {
+	// parse the url
+	url, _ := url.Parse(target)
+
+	// create the reverse proxy
+	proxy := httputil.NewSingleHostReverseProxy(url)
+
+	// Update the headers to allow for SSL redirection
+	req.URL.Host = url.Host
+	req.URL.Scheme = url.Scheme
+	req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
+	req.Host = url.Host
+
+	// Note that ServeHttp is non blocking and uses a go routine under the hood
+	proxy.ServeHTTP(res, req)
 }
